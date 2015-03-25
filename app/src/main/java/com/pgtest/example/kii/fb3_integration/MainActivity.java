@@ -1,4 +1,4 @@
-package com.pgtest.example.kii.fb3_study;
+package com.pgtest.example.kii.fb3_integration;
 
 import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;

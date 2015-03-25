@@ -1,4 +1,4 @@
-package com.pgtest.example.kii.fb3_study;
+package com.pgtest.example.kii.fb3_integration;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
