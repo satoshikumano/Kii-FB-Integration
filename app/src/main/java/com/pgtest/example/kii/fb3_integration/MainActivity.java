@@ -16,6 +16,7 @@ import com.kii.cloud.storage.KiiUser;
 import com.kii.cloud.storage.callback.KiiSocialCallBack;
 import com.kii.cloud.storage.social.KiiFacebookConnect;
 import com.kii.cloud.storage.social.KiiSocialConnect;
+import com.kii.cloud.storage.social.connector.KiiSocialNetworkConnector;
 
 public class MainActivity extends ActionBarActivity implements  Session.StatusCallback {
 
@@ -79,8 +80,8 @@ public class MainActivity extends ActionBarActivity implements  Session.StatusCa
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         Session.getActiveSession().onActivityResult(this, requestCode, resultCode, data);
-        if (requestCode == KiiFacebookConnect.REQUEST_CODE) {
-            Kii.socialConnect(KiiSocialConnect.SocialNetwork.FACEBOOK)
+        if (requestCode == KiiSocialNetworkConnector.REQUEST_CODE) {
+            Kii.socialConnect(KiiSocialConnect.SocialNetwork.SOCIALNETWORK_CONNECTOR)
                     .respondAuthOnActivityResult(requestCode, resultCode, data);
         }
     }
@@ -89,25 +90,22 @@ public class MainActivity extends ActionBarActivity implements  Session.StatusCa
         if (session.isOpened()) {
 
             // FB login succeeded. Login to Kii with obtained access token.
-            KiiFacebookConnect kfb = (KiiFacebookConnect) Kii.socialConnect(KiiSocialConnect
-                    .SocialNetwork.FACEBOOK);
-            kfb.initialize("210344862421225", null, null);
             Bundle options = new Bundle();
             String accessToken = session.getAccessToken();
-            options.putString("access_token", accessToken);
-
-            Kii.socialConnect(KiiSocialConnect.SocialNetwork.FACEBOOK).logIn(this, options,
-                    new KiiSocialCallBack() {
-                        @Override
-                        public void onLoginCompleted(KiiSocialConnect.SocialNetwork network, KiiUser
-                                user, Exception exception) {
-                            if (exception != null) {
-                                textView.setText("Failed to Login to Kii! " + exception
-                                        .getMessage());
-                            }
-                            textView.setText("Login to Kii! " + user.getDisplayname());
-                        }
-                    });
+            options.putString("accessToken", accessToken);
+            options.putParcelable("provider", KiiSocialNetworkConnector.Provider.FACEBOOK);
+            KiiSocialNetworkConnector conn = (KiiSocialNetworkConnector) Kii.socialConnect(KiiSocialConnect.SocialNetwork.SOCIALNETWORK_CONNECTOR);
+            conn.logIn(this, options, new KiiSocialCallBack() {
+                @Override
+                public void onLoginCompleted(KiiSocialConnect.SocialNetwork network, KiiUser user, Exception exception) {
+                    if (exception != null) {
+                        textView.setText("Failed to Login to Kii! " + exception
+                                .getMessage());
+                        return;
+                    }
+                    textView.setText("Login to Kii! " + user.getID());
+                }
+            });
 
             button.setText("LOGOUT");
             button.setOnClickListener(new View.OnClickListener() {
