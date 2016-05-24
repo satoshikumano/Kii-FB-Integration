@@ -18,7 +18,7 @@ import com.kii.cloud.storage.social.KiiFacebookConnect;
 import com.kii.cloud.storage.social.KiiSocialConnect;
 import com.kii.cloud.storage.social.connector.KiiSocialNetworkConnector;
 
-public class MainActivity extends ActionBarActivity implements  Session.StatusCallback {
+public class MainActivity extends ActionBarActivity {
 
     private Button button;
     private TextView textView;
@@ -29,43 +29,24 @@ public class MainActivity extends ActionBarActivity implements  Session.StatusCa
         Kii.initialize("9ab34d8b", "7a950d78956ed39f3b0815f0f001b43b", Kii.Site.JP);
         setContentView(R.layout.activity_main);
 
-        Settings.addLoggingBehavior(LoggingBehavior.INCLUDE_ACCESS_TOKENS);
-
-        Session session = Session.getActiveSession();
-        if (session == null) {
-            if (savedInstanceState != null) {
-                session = Session.restoreSession(this, null, this, savedInstanceState);
-            }
-            if (session == null) {
-                session = new Session(this);
-            }
-            Session.setActiveSession(session);
-            if (session.getState().equals(SessionState.CREATED_TOKEN_LOADED)) {
-                session.openForRead(new Session.OpenRequest(this).setCallback(this));
-            }
-        }
         button = (Button) findViewById(R.id.button);
         textView = (TextView) findViewById(R.id.textView);
-        updateView(session);
+        updateView();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        Session.getActiveSession().addCallback(this);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        Session.getActiveSession().removeCallback(this);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        Session session = Session.getActiveSession();
-        Session.saveSession(session, outState);
 
         Kii.onSaveInstanceState(outState);
     }
@@ -79,19 +60,16 @@ public class MainActivity extends ActionBarActivity implements  Session.StatusCa
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Session.getActiveSession().onActivityResult(this, requestCode, resultCode, data);
         if (requestCode == KiiSocialNetworkConnector.REQUEST_CODE) {
             Kii.socialConnect(KiiSocialConnect.SocialNetwork.SOCIALNETWORK_CONNECTOR)
                     .respondAuthOnActivityResult(requestCode, resultCode, data);
         }
     }
 
-    private void updateView(final Session session) {
-        if (session.isOpened()) {
-
+    private void updateView() {
             // FB login succeeded. Login to Kii with obtained access token.
             Bundle options = new Bundle();
-            String accessToken = session.getAccessToken();
+            String accessToken = ""; //TODO: obtain access token.
             options.putString("accessToken", accessToken);
             options.putParcelable("provider", KiiSocialNetworkConnector.Provider.FACEBOOK);
             KiiSocialNetworkConnector conn = (KiiSocialNetworkConnector) Kii.socialConnect(KiiSocialConnect.SocialNetwork.SOCIALNETWORK_CONNECTOR);
@@ -111,34 +89,10 @@ public class MainActivity extends ActionBarActivity implements  Session.StatusCa
             button.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Session s = Session.getActiveSession();
-                    if (!session.isClosed()) {
-                        session.closeAndClearTokenInformation();
-                    }
+                    // TODO: implement FB Logout if necessary.
                     KiiUser.logOut();
                 }
             });
-        } else {
-            textView.setText("Login to FB");
-            button.setText("LOGIN");
-            button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Session session = Session.getActiveSession();
-                    if (!session.isOpened() && !session.isClosed()) {
-                        session.openForRead(new Session.OpenRequest(MainActivity.this)
-                                .setCallback(MainActivity.this));
-                    } else {
-                        Session.openActiveSession(MainActivity.this, true, MainActivity.this);
-                    }
-                }
-            });
-        }
     }
 
-    // Session.StatusCallback
-    @Override
-    public void call(Session session, SessionState sessionState, Exception e) {
-        updateView(session);
-    }
 }
