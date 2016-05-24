@@ -1,4 +1,4 @@
-package com.pgtest.example.kii.fb3_integration;
+package com.pgtest.example.kii.fb_integration;
 
 import android.content.Intent;
 import android.support.v4.app.FragmentActivity;
