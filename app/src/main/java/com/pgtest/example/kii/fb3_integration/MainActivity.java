@@ -1,32 +1,77 @@
 package com.pgtest.example.kii.fb3_integration;
 
 import android.content.Intent;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.view.View;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.login.LoginResult;
+import com.facebook.login.widget.LoginButton;
 import com.kii.cloud.storage.Kii;
 import com.kii.cloud.storage.KiiUser;
 import com.kii.cloud.storage.callback.KiiSocialCallBack;
 import com.kii.cloud.storage.social.KiiSocialConnect;
 import com.kii.cloud.storage.social.connector.KiiSocialNetworkConnector;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends FragmentActivity {
 
-    private Button button;
     private TextView textView;
+    private CallbackManager callbackManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Kii.initialize("9ab34d8b", "7a950d78956ed39f3b0815f0f001b43b", Kii.Site.JP);
+        FacebookSdk.sdkInitialize(getApplicationContext());
+        callbackManager = CallbackManager.Factory.create();
         setContentView(R.layout.activity_main);
 
-        button = (Button) findViewById(R.id.button);
+        Kii.initialize("9ab34d8b", "7a950d78956ed39f3b0815f0f001b43b", Kii.Site.JP);
+
         textView = (TextView) findViewById(R.id.textView);
-        updateView();
+
+        LoginButton fbLoginButton = (LoginButton) findViewById(R.id.facebookLoginButton);
+        fbLoginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                Log.v("FB", "loginSuccess");
+                Bundle options = new Bundle();
+                String accessToken = loginResult.getAccessToken().getToken();
+                options.putString("accessToken", accessToken);
+                options.putParcelable("provider", KiiSocialNetworkConnector.Provider.FACEBOOK);
+                KiiSocialNetworkConnector conn = (KiiSocialNetworkConnector) Kii.socialConnect(KiiSocialConnect.SocialNetwork.SOCIALNETWORK_CONNECTOR);
+                conn.logIn(MainActivity.this, options, new KiiSocialCallBack() {
+                    @Override
+                    public void onLoginCompleted(KiiSocialConnect.SocialNetwork network, KiiUser user, Exception exception) {
+                        if (exception != null) {
+                            textView.setText("Failed to Login to Kii! " + exception
+                                    .getMessage());
+                            return;
+                        }
+                        textView.setText("Login to Kii! " + user.getID());
+                    }
+                });
+            }
+
+            @Override
+            public void onCancel() {
+                Log.v("FB", "Cancelled.");
+                textView.setText("Facebook Login has been cancelled.");
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+                Log.v("FB", "loginFailed");
+                error.printStackTrace();
+                textView.setText("Facebook Login has been failed: " + error.getMessage());
+            }
+        });
+
     }
 
     @Override
@@ -42,7 +87,6 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-
         Kii.onSaveInstanceState(outState);
     }
 
@@ -59,35 +103,7 @@ public class MainActivity extends ActionBarActivity {
             Kii.socialConnect(KiiSocialConnect.SocialNetwork.SOCIALNETWORK_CONNECTOR)
                     .respondAuthOnActivityResult(requestCode, resultCode, data);
         }
-    }
-
-    private void updateView() {
-            // FB login succeeded. Login to Kii with obtained access token.
-            Bundle options = new Bundle();
-            String accessToken = ""; //TODO: obtain access token.
-            options.putString("accessToken", accessToken);
-            options.putParcelable("provider", KiiSocialNetworkConnector.Provider.FACEBOOK);
-            KiiSocialNetworkConnector conn = (KiiSocialNetworkConnector) Kii.socialConnect(KiiSocialConnect.SocialNetwork.SOCIALNETWORK_CONNECTOR);
-            conn.logIn(this, options, new KiiSocialCallBack() {
-                @Override
-                public void onLoginCompleted(KiiSocialConnect.SocialNetwork network, KiiUser user, Exception exception) {
-                    if (exception != null) {
-                        textView.setText("Failed to Login to Kii! " + exception
-                                .getMessage());
-                        return;
-                    }
-                    textView.setText("Login to Kii! " + user.getID());
-                }
-            });
-
-            button.setText("LOGOUT");
-            button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    // TODO: implement FB Logout if necessary.
-                    KiiUser.logOut();
-                }
-            });
+        callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
 }
