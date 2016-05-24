@@ -30,7 +30,7 @@ public class MainActivity extends FragmentActivity {
         callbackManager = CallbackManager.Factory.create();
         setContentView(R.layout.activity_main);
 
-        Kii.initialize("9ab34d8b", "7a950d78956ed39f3b0815f0f001b43b", Kii.Site.JP);
+        Kii.initialize(Constants.Kii_APP_ID, Constants.KII_APP_KEY, Constants.KII_SITE);
 
         textView = (TextView) findViewById(R.id.textView);
 
